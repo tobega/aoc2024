@@ -1,0 +1,53 @@
+input is [
+[3, 4],
+[4, 3],
+[2, 5],
+[1, 3],
+[3, 9],
+[3, 3]
+];
+
+bubblesort templates
+  @ set $;
+  $::length..2:-1 -> 2..$ -> !#
+  $@ !
+
+  when <|?($@($) matches <|..~$@($ - 1)>)> do
+    temp is $@($);
+    @($) set $@($ - 1);
+    @($ - 1) set $temp;
+end bubblesort
+
+abs templates
+  when <|..0> do -$!
+  otherwise $ !
+end abs
+
+sum templates
+  @ set 0;
+  $... -> @ set $ + $@;
+  $@ !
+end sum
+
+sorted is [$input(..;1) -> bubblesort, $input(..;2) -> bubblesort];
+$sorted(1; .. as i; -> $ - $sorted(2; $i) -> abs) -> sum !
+
+compress templates
+  @ set [$(1)];
+  [$(~..)... -> #, $@] !
+  when <|=$@(1)> do ..|@ set $;
+  otherwise $@ ! @ set [$];
+end compress
+
+compressed is $sorted(..; -> compress);
+
+similarity templates
+  @ set $(2);
+  [$(1)... ->#]!
+  when <|?($@ matches <|[](=0)>)> do VOID
+  when <|?($(1) matches <|=$@(1;1)>)> do $(1) * $::length * $@(1)::length !
+  when <|?($(1) matches <|$@(1;1)~..>)> do @ set $@(~..); $ -> #!
+end similarity
+
+$compressed -> similarity -> sum !
+um !
