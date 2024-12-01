@@ -50,4 +50,3 @@ similarity templates
 end similarity
 
 $compressed -> similarity -> sum !
-um !
