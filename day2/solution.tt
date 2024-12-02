@@ -1,0 +1,31 @@
+composer read-report
+  [ <level>+ (<WS>?)]
+  rule level: (<WS>?) <INT>
+end read-report
+
+def reports: [$IN::lines -> read-report];
+$reports... -> \(
+    def report: $;
+    [1..~$::length -> $report($+1) - $report($)] -> #
+    when <[<1..3>+ VOID]|[<-3..-1>+ VOID]> do 1 !
+\) -> ..=Count -> !OUT::write
+
+'
+' -> !OUT::write
+
+$reports... -> \(
+    def report: $;
+    templates diff
+      def r: $;
+     [1..~$::length -> $r($+1) - $r($)] !
+    end diff
+    $ -> diff -> #
+    when <[<1..3>+ VOID]|[<-3..-1>+ VOID]> do 1 !
+    otherwise
+       1 -> \(
+        @: 0;
+        1..$report::length -> $report([1..~$, $~..last]) -> diff -> #
+        1..$@ !
+        when <[<1..3>+ VOID]|[<-3..-1>+ VOID]> do @: 1;
+      \) !
+\) -> ..=Count -> !OUT::write
