@@ -1,0 +1,25 @@
+composer muls
+  <mul|skip>+
+  rule mul: (<='mul('> def a: <INT>; <=','>) <INT> -> $ * $a (<=')'>)
+  rule skip: (<'.'>)
+end muls
+
+def lines: [$IN::lines];
+
+$lines... -> muls -> ..=Sum&{of: :()} -> !OUT::write
+'
+' -> !OUT::write
+
+templates maybe-muls
+  @: do´1;
+  composer dos-muls
+    <mul|do|dont|skip>+
+    rule mul: (<='mul('> def a: <INT>; <=','>) <INT> -> \(when <?($@maybe-muls <=do´1>)> do $ * $a ! \) (<=')'>)
+    rule do: (<='do()'> -> @maybe-muls: do´1;)
+    rule dont: (<='don''t()'> -> @maybe-muls: do´0;)
+    rule skip: (<'.'>)
+  end dos-muls
+  $... -> dos-muls !
+end maybe-muls
+
+$lines -> maybe-muls -> ..=Sum&{of: :()} -> !OUT::write
