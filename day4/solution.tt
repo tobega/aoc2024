@@ -20,12 +20,12 @@ templates find-xmas
     do $ !
 end find-xmas
 
-templates find-xmas-part1
+templates find-xmas-words
   $ -> \[i;j](when <='X'> do { i: $i, j: $j, word: 'x', by $directions... -> {direction: $}} -> find-xmas ! \)... ...
   -> ..=Count !
-end find-xmas-part1
+end find-xmas-words
 
-$word-search -> find-xmas-part1 -> !OUT::write
+$word-search -> find-xmas-words -> !OUT::write
 
 test 'part1'
   modify program
@@ -43,5 +43,24 @@ test 'part1'
     ];
   end program
 
-  assert $word-search -> find-xmas-part1 <=18"1"> 'example'
+  assert $word-search -> find-xmas-words <=18"1"> 'example'
 end 'part1'
+
+'
+' -> !OUT::write
+
+templates if-x-mas
+  when <~[<[](3)>+ VOID](3)> do
+    !VOID
+  when <?([$(first;first), $(last;last)] <=['M', 'S']|=['S','M']>)
+    ?([$(first;last), $(last;first)] <=['M', 'S']|=['S','M']>)>
+    do $ !
+end if-x-mas
+
+templates find-x-mas-blocks
+  def grid: $;
+  $ -> \[i;j](when <='A'> do $grid($i - 1"1"..$i + 1"1"; $j - 1"1"..$j + 1"1") -> if-x-mas ! \)... ...
+  -> ..=Count !
+end find-x-mas-blocks
+
+$word-search -> find-x-mas-blocks -> !OUT::write
