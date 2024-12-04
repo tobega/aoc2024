@@ -1,0 +1,47 @@
+composer letter-line
+  1"1":[<'.'>+]
+end letter-line
+
+def word-search: 1"1":[$IN::lines -> letter-line];
+
+def directions: [{i: 1"1", j: 0"1"}, {i: 0"1", j: 1"1"}, {i: -1"1", j: 0"1"}, {i: 0"1", j: -1"1"}, {i: 1"1", j: 1"1"}, {i: -1"1", j: -1"1"}, {i: 1"1", j: -1"1"}, {i: -1"1", j: 1"1"}];
+
+templates find-xmas
+  when <?($.i + $.direction.i <..~$word-search::first|$word-search::last~..>)|?($.j + $.direction.j <..~$word-search(first)::first|$word-search(first)::last~..>)>
+    !VOID
+  when <{word: <='x'>}
+    ?($word-search($.i + $.direction.i; $.j + $.direction.j) <='M'>)>
+    do {i: $.i + $.direction.i, j: $.j + $.direction.j, word: 'xm', direction: $.direction} -> #
+  when <{word: <='xm'>}
+    ?($word-search($.i + $.direction.i; $.j + $.direction.j) <='A'>)>
+    do {i: $.i + $.direction.i, j: $.j + $.direction.j, word: 'xma', direction: $.direction} -> #
+  when <{word: <='xma'>}
+    ?($word-search($.i + $.direction.i; $.j + $.direction.j) <='S'>)>
+    do $ !
+end find-xmas
+
+templates find-xmas-part1
+  $ -> \[i;j](when <='X'> do { i: $i, j: $j, word: 'x', by $directions... -> {direction: $}} -> find-xmas ! \)... ...
+  -> ..=Count !
+end find-xmas-part1
+
+$word-search -> find-xmas-part1 -> !OUT::write
+
+test 'part1'
+  modify program
+    def word-search:1"1":[
+      'MMMSXXMASM' -> letter-line,
+      'MSAMXMSMSA' -> letter-line,
+      'AMXSXMAAMM' -> letter-line,
+      'MSAMASMSMX' -> letter-line,
+      'XMASAMXAMM' -> letter-line,
+      'XXAMMXXAMA' -> letter-line,
+      'SMSMSASXSS' -> letter-line,
+      'SAXAMASAAA' -> letter-line,
+      'MAMMMXMMMM' -> letter-line,
+      'MXMXAXMASX' -> letter-line
+    ];
+  end program
+
+  assert $word-search -> find-xmas-part1 <=18"1"> 'example'
+end 'part1'
