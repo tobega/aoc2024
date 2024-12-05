@@ -19,8 +19,8 @@ end parse-update
 def page-preceded-by: $read-page-ordering;
 def updates: [$IN::lines -> parse-update];
 
-templates check-update
-  @: [1..99 -> allowed´1];
+templates check-update&{fix:}
+  @: [1..99 -> 0];
   def update: $;
   templates in-update
     when <?($update <[<=$>]>)> do $!
@@ -28,19 +28,45 @@ templates check-update
   def applicable-rules: [1..99 -> [$ -> in-update -> $page-preceded-by($)... -> in-update]];
   $update::first -> #
 
-  when <?($@($update($)) <=allowed´0>)> do !VOID
+  when <?($fix <=fix´1>)?($@($update($)) <~=0>)> do
+    def this: $update($);
+    def blocker: $@($this);
+    [$update ... -> \(
+        when <=$blocker> do $this ! $blocker !
+        when <=$this> do !VOID
+        otherwise $ !
+      \)] !
+
+  when <?($@($update($)) <~=0>)> do $update !
 
   when <=$update::last> do $update(($update::last + $update::first + 1) ~/ 2) !
 
   otherwise
-    $applicable-rules($update($)) ... -> \(
-        when <?($@check-update($) <=allowed´1>)> do @check-update($): allowed´0;
+    def this: $update($);
+    $applicable-rules($this) ... -> \(
+        when <?($@check-update($) <=0>)> do @check-update($): $this;
           $applicable-rules($)... -> #
     \) -> !VOID
     $ + 1 -> #
 end check-update
 
-$updates... -> check-update -> ..=Sum&{of: :()} -> !OUT::write
+source solve
+  @: [];
+  $updates... -> check-update&{fix: 0} -> \(
+        when <..> do $ !
+        otherwise ..|@solve: $;
+    \) -> ..=Sum&{of: :()} -> 'part1: $;$#10;' !
+
+  [1 -> #]... -> ..=Sum&{of: :()} -> 'part2: $;$#10;' !
+  when <$@::length~..> do !VOID
+  otherwise ^@(first) -> check-update&{fix: 1} -> \(
+        when <..> do $ !
+        otherwise ..|@solve: $;
+    \) !
+    1 -> #
+end solve
+
+$solve -> !OUT::write
 
 test 'example'
   use shadowed core-system/
@@ -86,5 +112,10 @@ test 'example'
     def IN: $FakeIn;
   end core-system
 
-  assert $updates... -> check-update -> ..=Sum&{of: :()} <=143> 'part1'
+  assert $updates... -> check-update&{fix: 0} -> \(
+        when <..> do $ !
+        otherwise !VOID
+    \) -> ..=Sum&{of: :()} <=143> 'part1'
+
+  assert [$solve] <=['part1: 143$#10;', 'part2: 123$#10;']> 'both parts'
 end 'example'
