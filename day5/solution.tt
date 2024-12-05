@@ -1,0 +1,90 @@
+source read-page-ordering
+  composer parse-rule
+    [<INT> (<='|'>) <INT>]
+  end parse-rule
+  @: [1..99 -> []];
+  $IN::readline -> #
+  $@!
+
+  when <~=''> do
+    $ -> parse-rule -> ..|@($(2)): $(1);
+    $IN::readline -> #
+end read-page-ordering
+
+composer parse-update
+  [<number>+]
+  rule number: (<=','>?) <INT>
+end parse-update
+
+def page-preceded-by: $read-page-ordering;
+def updates: [$IN::lines -> parse-update];
+
+templates check-update
+  @: [1..99 -> allowed´1];
+  def update: $;
+  templates in-update
+    when <?($update <[<=$>]>)> do $!
+  end in-update
+  def applicable-rules: [1..99 -> [$ -> in-update -> $page-preceded-by($)... -> in-update]];
+  $update::first -> #
+
+  when <?($@($update($)) <=allowed´0>)> do !VOID
+
+  when <=$update::last> do $update(($update::last + $update::first + 1) ~/ 2) !
+
+  otherwise
+    $applicable-rules($update($)) ... -> \(
+        when <?($@check-update($) <=allowed´1>)> do @check-update($): allowed´0;
+          $applicable-rules($)... -> #
+    \) -> !VOID
+    $ + 1 -> #
+end check-update
+
+$updates... -> check-update -> ..=Sum&{of: :()} -> !OUT::write
+
+test 'example'
+  use shadowed core-system/
+    processor FakeIn
+      @: [
+        '47|53',
+        '97|13',
+        '97|61',
+        '97|47',
+        '75|29',
+        '61|13',
+        '75|53',
+        '29|13',
+        '97|29',
+        '53|29',
+        '61|53',
+        '97|53',
+        '61|29',
+        '47|13',
+        '75|47',
+        '97|75',
+        '47|61',
+        '75|61',
+        '47|29',
+        '75|13',
+        '53|13',
+        '',
+        '75,47,61,53,29',
+        '97,61,53,29,13',
+        '75,29,13',
+        '75,97,47,61,53',
+        '61,13,29',
+        '97,13,75,29,47'
+      ];
+      source readline
+        ^@FakeIn(1) !
+      end readline
+      source lines
+        $@FakeIn... !
+      end lines
+    end FakeIn
+
+    def IN: $FakeIn;
+  end core-system
+
+  assert $updates... -> check-update -> ..=Sum&{of: :()} <=143> 'part1'
+end 'example'
