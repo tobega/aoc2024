@@ -27,3 +27,80 @@ source find-guard-positions
 end find-guard-positions
 
 $find-guard-positions -> !OUT::write
+'
+' -> !OUT::write
+
+source try-create-loop&{walk:}
+  data walk <[]> local
+  @: $walk;
+  @($.i + $direction-vectors($.direction-index).i; $.j + $direction-vectors($.direction-index).j): block´'#';
+  $ -> #
+
+  when <?($.i + $direction-vectors($.direction-index).i <..~$map::first|$map::last~..>)
+    |?($.j + $direction-vectors($.direction-index).j <..~$map(first)::first|$map(first)::last~..>)> do
+      !VOID
+  when <?($@($.i + $direction-vectors($.direction-index).i; $.j + $direction-vectors($.direction-index).j) <´´=$.direction-index>)> do
+    1 !
+  when <?($@($.i + $direction-vectors($.direction-index).i; $.j + $direction-vectors($.direction-index).j) <block>)> do
+    {$, direction-index: $.direction-index mod $direction-vectors::length + 1"right turn"} -> #
+  otherwise
+    def next-i: $.i + $direction-vectors($.direction-index).i;
+    def next-j: $.j + $direction-vectors($.direction-index).j;
+    @($next-i; $next-j): $.direction-index;
+    {$, i: $next-i, j: $next-j} -> #  
+end try-create-loop
+
+source find-guard-loops
+  @: $map -> \[i;j](when <='#'> do block´'#'! otherwise open´'.' !\);
+  @($start-position.i; $start-position.j): $start-position.direction-index;
+  $start-position -> #
+
+  when <?($.i + $direction-vectors($.direction-index).i <..~$map::first|$map::last~..>)
+    |?($.j + $direction-vectors($.direction-index).j <..~$map(first)::first|$map(first)::last~..>)> do
+      !VOID
+  when <?($@($.i + $direction-vectors($.direction-index).i; $.j + $direction-vectors($.direction-index).j) <block>)> do
+    {$, direction-index: $.direction-index mod $direction-vectors::length + 1"right turn"} -> #
+  when <?($@($.i + $direction-vectors($.direction-index).i; $.j + $direction-vectors($.direction-index).j) <open>)> do
+    $ -> try-create-loop&{walk: $@} !
+    def next-i: $.i + $direction-vectors($.direction-index).i;
+    def next-j: $.j + $direction-vectors($.direction-index).j;
+    @($next-i; $next-j): $.direction-index;
+    {$, i: $next-i, j: $next-j} -> #  
+  otherwise
+    def next-i: $.i + $direction-vectors($.direction-index).i;
+    def next-j: $.j + $direction-vectors($.direction-index).j;
+    @($next-i; $next-j): $.direction-index;
+    {$, i: $next-i, j: $next-j} -> #  
+end find-guard-loops
+
+$find-guard-loops -> ..=Sum&{of: :()} -> !OUT::write
+
+
+test 'example'
+  use shadowed core-system/
+    processor FakeIn
+      @: [
+        '....#.....',
+        '.........#',
+        '..........',
+        '..#.......',
+        '.......#..',
+        '..........',
+        '.#..^.....',
+        '........#.',
+        '#.........',
+        '......#...'
+      ];
+      source readline
+        ^@FakeIn(1) !
+      end readline
+      source lines
+        $@FakeIn... !
+      end lines
+    end FakeIn
+
+    def IN: $FakeIn;
+  end core-system
+
+  assert $find-guard-loops -> ..=Sum&{of: :()} <=6> 'part2'
+end 'example'
