@@ -1,0 +1,29 @@
+def direction-markers: 1"right turn":['^', '>', 'v', '<'];
+def direction-vectors: 1"right turn":[{i: -1"i", j: 0"j"}, {i: 0"i", j: 1"j"}, {i: 1"i", j: 0"j"}, {i: 0"i", j: -1"j"}];
+
+def map: 1"i":[$IN::lines -> \(<~=''> $!\) -> 1"j":[$...]];
+def start-position: $map -> \[i;j](
+    when <~='.'|='#'> do
+    def marker: $;
+    $direction-markers -> \[marker-index](when <=$marker> do {i: $i, j: $j, direction-index: $marker-index}!\)... !
+\)... ...;
+
+source find-guard-positions
+  @: $map -> \[i;j](0!\);
+  @($start-position.i; $start-position.j): 1;
+  $start-position -> #
+  $@... ... -> ..=Sum&{of: :()} !
+
+  when <?($.i + $direction-vectors($.direction-index).i <..~$map::first|$map::last~..>)
+    |?($.j + $direction-vectors($.direction-index).j <..~$map(first)::first|$map(first)::last~..>)> do
+      !VOID
+  when <?($map($.i + $direction-vectors($.direction-index).i; $.j + $direction-vectors($.direction-index).j) <='#'>)> do
+    {$, direction-index: $.direction-index mod $direction-vectors::length + 1"right turn"} -> #
+  otherwise
+    def next-i: $.i + $direction-vectors($.direction-index).i;
+    def next-j: $.j + $direction-vectors($.direction-index).j;
+    @($next-i; $next-j): 1;
+    {$, i: $next-i, j: $next-j} -> #
+end find-guard-positions
+
+$find-guard-positions -> !OUT::write
