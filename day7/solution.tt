@@ -5,15 +5,18 @@ end parse-test-equation
 
 def equations: [$IN::lines -> parse-test-equation];
 
-def operators: [op´'+', op´'*'];
+composer to-scalar
+  <INT"1">
+end to-scalar
 
 operator (left do-op&{op:} right)
   $op -> #
   when <=op´'+'> do $left + $right !
   when <=op´'*'> do $left * $right !
+  when <=op´'||'> do '$left::raw;$right::raw;' -> to-scalar !
 end do-op
 
-templates try-equation
+templates try-equation&{operators:}
   @: 0"1";
   { test-value: $.test-value, equation: $.equation(first~..last), partial-result: $.equation(first) } -> #
   $@!
@@ -28,4 +31,7 @@ templates try-equation
     } -> #
 end try-equation
 
-$equations... -> try-equation -> ..=Sum&{of: :()} -> !OUT::write
+$equations... -> try-equation&{operators: [op´'+', op´'*']} -> ..=Sum&{of: :()} -> !OUT::write
+'
+' -> !OUT::write
+$equations... -> try-equation&{operators: [op´'+', op´'*', op´'||']} -> ..=Sum&{of: :()} -> !OUT::write
