@@ -1,0 +1,31 @@
+composer parse-test-equation
+  { test-value: <INT"1"> (<=':'>) equation: [<number>+] }
+  rule number: (<WS>) <INT"1">
+end parse-test-equation
+
+def equations: [$IN::lines -> parse-test-equation];
+
+def operators: [op´'+', op´'*'];
+
+operator (left do-op&{op:} right)
+  $op -> #
+  when <=op´'+'> do $left + $right !
+  when <=op´'*'> do $left * $right !
+end do-op
+
+templates try-equation
+  @: 0"1";
+  { test-value: $.test-value, equation: $.equation(first~..last), partial-result: $.equation(first) } -> #
+  $@!
+  when <{equation: <[](0)>, partial-result: <=$.test-value>}> do @:$.test-value;
+  when <{equation: <[](0)>}> do !VOID
+  otherwise
+    def current: $;
+    $operators... -> {
+        partial-result: ($current.partial-result do-op&{op: $} $current.equation(first)),
+        equation: $current.equation(first~..last),
+        test-value: $current.test-value
+    } -> #
+end try-equation
+
+$equations... -> try-equation -> ..=Sum&{of: :()} -> !OUT::write
