@@ -1,0 +1,39 @@
+def map: 0"i":[$IN::lines -> 0"j":[$...]];
+
+data position <[(<"i">:<"j">)VOID]>
+  ,position2 <position>
+
+def antennae: {|
+  $map -> \[i;j](when <~='.'> do {frequency: $, position: [$i,$j]}!\)... ...
+|};
+
+def antinodes:{| ($antennae join $antennae({frequency:, position2: §.position}))... -> \(
+    when <~{position: <=$.position2>}> do $!
+\) -> \(
+    def diff: [$.position2(1) - $.position(1), $.position2(2) - $.position(2)];
+    {position: [$.position(1) - $diff(1), $.position(2) - $diff(2)]} -> #
+    {position: [$.position2(1) + $diff(1), $.position2(2) + $diff(2)]} -> #
+    when <{position: <[(<´´$map::first..$map::last>:<$map(first)::first..$map(first)::last>)]>}> do $ !
+\) |};
+
+$antinodes... -> ..=Count -> !OUT::write
+
+test 'example'
+  modify program
+    def map: 0"i":[
+        0"j":['............'...],
+        0"j":['........0...'...],
+        0"j":['.....0......'...],
+        0"j":['.......0....'...],
+        0"j":['....0.......'...],
+        0"j":['......A.....'...],
+        0"j":['............'...],
+        0"j":['............'...],
+        0"j":['........A...'...],
+        0"j":['.........A..'...],
+        0"j":['............'...],
+        0"j":['............'...]
+    ];
+  end program
+  assert $antinodes... -> ..=Count <=14"1"> 'part 1 $antinodes;'
+end 'example'
