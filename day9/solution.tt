@@ -3,27 +3,74 @@ composer to-int
 end to-int
 
 composer decode-disk-map
-  @: 0;
-  0:[<file>+]
-  rule file: <'.'> -> to-int -> 1..$ -> $@ (@: $@ + 1;) <'.'>? -> to-int -> 1..$ -> {} 
+  @: id´0;
+  0"1":[<file>+]
+  rule file: <'.'> -> to-int -> {id: $@, size: ($)"1"} (@: id´($@::raw + 1);) <'.'>? -> to-int -> ($)"1" 
 end decode-disk-map
 
 def disk-map: $IN::readline -> decode-disk-map;
 
 templates compress
   @: $;
-  0:[$@::first -> #] !
+  $::first:[$@::first -> #] !
   when <$@::last~..> do !VOID
-  when <?($@($) <..>)> do
-    $@($) !
-    $ + 1 -> #
-  when <?($@(last) <..>)> do
-    ^@(last) !
-    $ + 1 -> #
-  otherwise
+  when <?($@(last) <"">)> do
     ^@(last) -> !VOID
     $ -> #
+  when <?($@($) <{}>)> do
+    $@($) !
+    $ + 1"1" -> #
+  when <?($@($) <..~$@(last).size>)> do
+    {id: $@(last).id, size: $@($)} !
+    @(last): {id: $@(last).id, size: $@(last).size - $@($)};
+    $ + 1"1" -> #
+  otherwise
+    @($): $@($) - $@(last).size;
+    ^@(last) !
+    $ -> \(when <?($@compress($) <=0"1">)> do $ + 1"1" ! otherwise $!\) -> #
 end compress
 
-$disk-map -> compress -> \[i]($ * $i !\)... -> ..=Sum&{of: :()} -> !OUT::write
-    
+templates checksum
+  0"1":[$... -> \(
+    when <""> do 1..$::raw -> {} !
+    otherwise
+      def file-blocks: $;
+      1"1"..$file-blocks.size -> $file-blocks.id !
+  \)] -> \[i](when <..> do $::raw * $i::raw !\)... -> ..=Sum&{of: :()} !
+end checksum
+
+$disk-map -> compress -> checksum -> !OUT::write
+'
+' -> !OUT::write
+
+templates compress2
+  @: $;
+  { start: $@::first, end: $@::last } -> #
+  $@ !
+
+  when <{end: <..$@::first>}> do !VOID
+  when <?($@($.end) <"">)> do {$, end: $.end - 1"1"} -> #
+  when <{start: <$.end..>}> do {start: $@::first, end: $.end - 1"1"} -> #
+  when <?($@($.start) <~"">)> do {start: $.start + 1"1", end: $.end} -> #
+  when <?($@($.start) <..~$@($.end).size>)> do {start: $.start + 1"1", end: $.end} -> #
+  otherwise
+    def left: $@($.start) - $@($.end).size;
+    @: 0"1":[$@(first..~$.start)...,
+      $@($.end),
+      $left -> \(when <0"1"~..> do $ !\),
+      $@($.start~..~$.end)...,
+      $@($.end).size,
+      $@($.end~..last)...
+    ];
+    {start: $@::first, end: $.end -> \(when <?($left <=0"1">)> do $ - 1"1"! otherwise $!\)} -> #
+end compress2
+
+$disk-map -> compress2 -> checksum -> !OUT::write
+
+test 'example'
+  modify program
+    def disk-map: '2333133121414131402' -> decode-disk-map;
+  end program
+
+  assert $disk-map -> compress2 -> checksum <=2858> 'part 2'
+end 'example'
