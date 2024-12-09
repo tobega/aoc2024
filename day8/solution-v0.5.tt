@@ -1,0 +1,70 @@
+-- Not all of this syntax may have been implemented
+map is [0"i": $IN::lines -> [0"j": $...]];
+
+vector2d requires <[(<"i">:<"j">)VOID]>
+position requires <vector2d>
+position2 requires <position>
+
+antennae is {|
+  $map(.. as i; .. as j; -> if <~|='.'> -> {frequency: $, position: [$i,$j]})... ...
+|};
+
+antinodes is {| ($antennae join $antennae(..; -> {frequency:, position2: $(position:)}))... -> templates
+    when <~|{position: <=$(position2:)>}> do $!
+end -> templates
+    diff is [$(position2:;1) - $(position:;1), $(position2;2) - $(position:;2)];
+    {position: [$(position:;1) - $diff(1), $(position:;2) - $diff(2)]} -> #
+    {position: [$(position2:;1) + $diff(1), $(position2:;2) + $diff(2)]} -> #
+    when <{position: <[(<´´$map::first..$map::last>:<$map(|1)::first..$map(|1)::last>)]>}> do $ !
+end |};
+
+$antinodes... -> ..=Count -> !OUT::write
+'
+' -> !OUT::write
+
+lines is [
+    ($antennae join $antennae({frequency:, position2: $(position:)}))... -> \(
+      when <?($(position:;1) <..~$(position2:;1)>)
+        |?($(position:;1) <=$(position2:;1)>)?($(position:;2) <..~$(position2:;2)>)> do $!
+    \) -> {position: $(position:), vector2d: [$(position2:;1) - $(position:;1), $(position2:;2) - $(position:;2)]}
+];
+
+templates back
+  {position: [$(position:;1) - $(vector2d:;1), $(position:;2) - $(vector2d:;2)], vector2d: $(vector2d:)} -> #
+  when <{position: <[(<´´$map::first..$map::last>:<$map(|1)::first..$map(|1)::last>)]>}> do
+    $ !
+    {position: [$(position:;1) - $(vector2d:;1), $(position:;2) - $(vector2d:;2)], vector2d: $(vector2d:)} -> #
+end back
+
+templates forward
+  {position: [$(position:;1) + $(vector2d:;1), $(position:;2) + $(vector2d:;2)], vector2d: $(vector2d:)} -> #
+  when <{position: <[(<´´$map::first..$map::last>:<$map(|1)::first..$map(|1)::last>)]>}> do
+    $ !
+    {position: [$(position:;1) + $(vector2d:;1), $(position:;2) + $(vector2d:;2)], vector2d: $(vector2d:)} -> #
+end forward
+
+{| $lines... -> templates
+  $!
+  $ -> back !
+  $ -> forward !
+end -> {position:} |}... -> ..=Count -> !OUT::write
+
+test 'example'
+  modify program
+    def map: [0"i":
+        [0"j": '............'...],
+        [0"j": '........0...'...],
+        [0"j": '.....0......'...],
+        [0"j": '.......0....'...],
+        [0"j": '....0.......'...],
+        [0"j": '......A.....'...],
+        [0"j": '............'...],
+        [0"j": '............'...],
+        [0"j": '........A...'...],
+        [0"j": '.........A..'...],
+        [0"j": '............'...],
+        [0"j": '............'...]
+    ];
+  end program
+  assert $antinodes... -> ..=Count <|=14"1"> 'part 1 $antinodes;'
+end 'example'

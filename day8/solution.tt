@@ -1,6 +1,7 @@
 def map: 0"i":[$IN::lines -> 0"j":[$...]];
 
-data position <[(<"i">:<"j">)VOID]>
+data vector2d <[(<"i">:<"j">)VOID]>
+  ,position <vector2d>
   ,position2 <position>
 
 def antennae: {|
@@ -17,6 +18,35 @@ def antinodes:{| ($antennae join $antennae({frequency:, position2: §.position})
 \) |};
 
 $antinodes... -> ..=Count -> !OUT::write
+'
+' -> !OUT::write
+
+def lines: [
+    ($antennae join $antennae({frequency:, position2: §.position}))... -> \(
+      when <?($.position(1) <..~$.position2(1)>)
+        |?($.position(1) <=$.position2(1)>)?($.position(2) <..~$.position2(2)>)> do $!
+    \) -> {position: $.position, vector2d: [$.position2(1) - $.position(1), $.position2(2) - $.position(2)]}
+];
+
+templates back
+  {position: [$.position(1) - $.vector2d(1), $.position(2) - $.vector2d(2)], vector2d: $.vector2d} -> #
+  when <{position: <[(<´´$map::first..$map::last>:<$map(first)::first..$map(first)::last>)]>}> do
+    $ !
+    {position: [$.position(1) - $.vector2d(1), $.position(2) - $.vector2d(2)], vector2d: $.vector2d} -> #
+end back
+
+templates forward
+  {position: [$.position(1) + $.vector2d(1), $.position(2) + $.vector2d(2)], vector2d: $.vector2d} -> #
+  when <{position: <[(<´´$map::first..$map::last>:<$map(first)::first..$map(first)::last>)]>}> do
+    $ !
+    {position: [$.position(1) + $.vector2d(1), $.position(2) + $.vector2d(2)], vector2d: $.vector2d} -> #
+end forward
+
+{| $lines... -> \(
+  $!
+  $ -> back !
+  $ -> forward !
+\) -> {position: $.position} |}... -> ..=Count -> !OUT::write
 
 test 'example'
   modify program
@@ -36,4 +66,9 @@ test 'example'
     ];
   end program
   assert $antinodes... -> ..=Count <=14"1"> 'part 1 $antinodes;'
+  assert {| $lines... -> \(
+    $!
+    $ -> back !
+    $ -> forward !
+\) -> {position: $.position} |}... -> ..=Count <=34"1"> 'part 2 $lines;'
 end 'example'

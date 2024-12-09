@@ -1,0 +1,29 @@
+composer to-int
+  <INT>
+end to-int
+
+composer decode-disk-map
+  @: 0;
+  0:[<file>+]
+  rule file: <'.'> -> to-int -> 1..$ -> $@ (@: $@ + 1;) <'.'>? -> to-int -> 1..$ -> {} 
+end decode-disk-map
+
+def disk-map: $IN::readline -> decode-disk-map;
+
+templates compress
+  @: $;
+  0:[$@::first -> #] !
+  when <$@::last~..> do !VOID
+  when <?($@($) <..>)> do
+    $@($) !
+    $ + 1 -> #
+  when <?($@(last) <..>)> do
+    ^@(last) !
+    $ + 1 -> #
+  otherwise
+    ^@(last) -> !VOID
+    $ -> #
+end compress
+
+$disk-map -> compress -> \[i]($ * $i !\)... -> ..=Sum&{of: :()} -> !OUT::write
+    
