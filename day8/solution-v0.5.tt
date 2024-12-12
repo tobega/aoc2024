@@ -9,9 +9,9 @@ antennae is {|
   $map(.. as i; .. as j; -> if <~|='.'> -> {frequency: $, position: [$i,$j]})... ...
 |};
 
-antinodes is {| ($antennae join $antennae(..; -> {frequency:, position2: $(position:)}))... -> templates
-    when <~|{position: <=$(position2:)>}> do $!
-end -> templates
+antinodes is {| ($antennae join $antennae(..; -> {frequency:, position2: $(position:)}))...
+-> if <~|{position: <=$(position2:)>}>
+-> templates
     diff is [$(position2:;1) - $(position:;1), $(position2;2) - $(position:;2)];
     {position: [$(position:;1) - $diff(1), $(position:;2) - $diff(2)]} -> #
     {position: [$(position2:;1) + $diff(1), $(position2:;2) + $diff(2)]} -> #
@@ -23,20 +23,20 @@ $antinodes... -> ..=Count -> !OUT::write
 ' -> !OUT::write
 
 lines is [
-    ($antennae join $antennae({frequency:, position2: $(position:)}))... -> \(
-      when <?($(position:;1) <..~$(position2:;1)>)
-        |?($(position:;1) <=$(position2:;1)>)?($(position:;2) <..~$(position2:;2)>)> do $!
-    \) -> {position: $(position:), vector2d: [$(position2:;1) - $(position:;1), $(position2:;2) - $(position:;2)]}
+    ($antennae join $antennae({frequency:, position2: $(position:)}))...
+    -> if <?($(position:;1) <..~$(position2:;1)>)
+        |?($(position:;1) <=$(position2:;1)>)?($(position:;2) <..~$(position2:;2)>)>
+    -> {position: $(position:), vector2d: [$(position2:;1) - $(position:;1), $(position2:;2) - $(position:;2)]}
 ];
 
-templates back
+back templates
   {position: [$(position:;1) - $(vector2d:;1), $(position:;2) - $(vector2d:;2)], vector2d: $(vector2d:)} -> #
   when <{position: <[(<´´$map::first..$map::last>:<$map(|1)::first..$map(|1)::last>)]>}> do
     $ !
     {position: [$(position:;1) - $(vector2d:;1), $(position:;2) - $(vector2d:;2)], vector2d: $(vector2d:)} -> #
 end back
 
-templates forward
+forward templates
   {position: [$(position:;1) + $(vector2d:;1), $(position:;2) + $(vector2d:;2)], vector2d: $(vector2d:)} -> #
   when <{position: <[(<´´$map::first..$map::last>:<$map(|1)::first..$map(|1)::last>)]>}> do
     $ !
