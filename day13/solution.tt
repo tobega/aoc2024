@@ -1,0 +1,36 @@
+templates parse-claws
+  composer parseButton
+    [(<'Button .: X'>) <INT"x">, (<=', Y'>) <INT"y"> ]
+  end parseButton
+  composer parsePrize
+    [(<='Prize: X='>) <INT"x">, (<=', Y='>) <INT"y"> ]
+  end parsePrize
+  $ -> #
+  when <'Button A:.*'> do
+    [$ -> parseButton, $IN::readline -> parseButton, $IN::readline -> parsePrize ] !
+    $IN::readline -> #
+  otherwise $IN::readline -> #
+end parse-claws
+
+def claws: [$IN::readline -> parse-claws];
+
+templates cost-to-win
+  // columns are x and y equations, rows are a-coefficient, b-coefficient and result
+  @: $;
+  // make a-coeff equal in both
+  @: $@ -> \[p; eq](
+     when <?($eq <=1>)> do ($ * $@cost-to-win(1; 2))"x" !
+     when <?($eq <=2>)> do ($ * $@cost-to-win(1; 1))"y" ! \);
+  // zero out a-coeff for x:s
+  @(1..3; 1): $@(1..3; 1) -> \[p](($ - $@cost-to-win($p;2))"x" !\)...;
+  def b: ($@(3; 1) ~/ $@(2; 1))"1";
+  def a: (($@(3; 2) - $@(2; 2) * $b) ~/ $@(1; 2))"1";
+  $ -> #
+  // sanity check if integer division worked out
+  when <?($a * $(1; 1) + $b * $(2; 1) <=$(3;1)>)
+    ?($a * $(1; 2) + $b * $(2; 2) <=$(3;2)>)> do $a * 3 + $b !
+end cost-to-win
+
+$claws ... -> cost-to-win -> ..=Sum&{of: :()} -> !OUT::write
+
+// For part 2 need to use java BigInteger
