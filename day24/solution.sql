@@ -20,7 +20,7 @@ FROM input
 WHERE line_no < (SELECT line_no FROM input WHERE line = '')
 );
 
-DROP TYPE IF EXISTS operation;
+DROP TYPE IF EXISTS operation CASCADE;
 CREATE TYPE operation AS ENUM ('AND', 'OR', 'XOR');
 
 DROP TABLE IF EXISTS gates;
